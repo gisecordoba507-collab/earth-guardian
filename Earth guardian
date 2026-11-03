@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EARTH GUARDIAN</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #07111c;
+  color: #e9f5ff;
+  font-family: Arial, sans-serif;
+}
+header {
+  padding: 25px 20px;
+  background: #0c1c2b;
+  border-bottom: 1px solid #19394c;
+}
+.logo {
+  color: #48e6bd;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.subtitle {
+  color: #91aabc;
+  font-size: 11px;
+  margin-top: 7px;
+  letter-spacing: 2px;
+}
+main { padding: 20px; max-width: 900px; margin: auto; }
+.status {
+  background: #102b2b;
+  border: 1px solid #176b59;
+  padding: 14px;
+  border-radius: 12px;
+  color: #58e6b7;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+h2 { font-size: 17px; margin-top: 25px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.card {
+  background: #102033;
+  border: 1px solid #1d3b50;
+  padding: 17px;
+  border-radius: 13px;
+}
+.number {
+  font-size: 30px;
+  font-weight: bold;
+  color: #55e5c0;
+  margin-top: 10px;
+}
+.small { color: #91aabc; font-size: 12px; }
+.event {
+  background: #102033;
+  border: 1px solid #1d3b50;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 12px 0;
+}
+.event h3 { font-size: 15px; margin: 0 0 10px; }
+.event p { color: #a7bbca; font-size: 12px; }
+a { color: #55e5c0; }
+button {
+  background: #146b5b;
+  color: white;
+  border: 0;
+  border-radius: 9px;
+  padding: 12px 16px;
+  font-weight: bold;
+  margin-top: 12px;
+}
+footer {
+  text-align: center;
+  padding: 25px;
+  color: #71899a;
+  font-size: 11px;
+}
+@media(max-width:400px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌎 EARTH GUARDIAN</div>
+  <div class="subtitle">GLOBAL ENVIRONMENTAL INTELLIGENCE</div>
+</header>
+
+<main>
+  <div class="status" id="status">
+    ● INITIALIZING ENVIRONMENTAL SYSTEM...
+  </div>
+
+  <h2>GLOBAL MONITORING</h2>
+
+  <div class="grid">
+    <div class="card">
+      <div class="small">ACTIVE EVENTS</div>
+      <div class="number" id="total">--</div>
+    </div>
+    <div class="card">
+      <div class="small">DATA SOURCE</div>
+      <div class="number" style="font-size:19px">NASA</div>
+    </div>
+    <div class="card">
+      <div class="small">LAST UPDATE</div>
+      <div class="number" id="updated" style="font-size:16px">--</div>
+    </div>
+    <div class="card">
+      <div class="small">SYSTEM</div>
+      <div class="number" style="font-size:19px">ONLINE</div>
+    </div>
+  </div>
+
+  <h2>ENVIRONMENTAL EVENTS</h2>
+  <p class="small">Events reported by NASA EONET</p>
+
+  <div id="events">
+    Loading environmental data...
+  </div>
+
+  <button onclick="loadEvents()">↻ UPDATE DATA</button>
+
+  <p class="small">
+    Source:
+    <a href="https://eonet.gsfc.nasa.gov/"
+       target="_blank">NASA EONET</a>
+  </p>
+</main>
+
+<footer>
+  EARTH GUARDIAN · INDEPENDENT PROJECT<br>
+  Experimental environmental monitoring platform
+</footer>
+
+<script>
+const API =
+"https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=50";
+
+async function loadEvents() {
+  const status = document.getElementById("status");
+  const container = document.getElementById("events");
+
+  status.textContent = "● CONNECTING TO NASA EONET...";
+
+  try {
+    const response = await fetch(API);
+
+    if (!response.ok) {
+      throw new Error("NASA data unavailable");
+    }
+
+    const data = await response.json();
+    const events = data.events || [];
+
+    document.getElementById("total").textContent =
+      events.length;
+
+    document.getElementById("updated").textContent =
+      new Date().toLocaleTimeString("es-AR");
+
+    container.replaceChildren();
+
+    if (events.length === 0) {
+      container.textContent = "No open events returned.";
+    }
+
+    events.forEach(event => {
+      const card = document.createElement("div");
+      card.className = "event";
+
+      const title = document.createElement("h3");
+      title.textContent = "🌍 " + event.title;
+
+      const category = document.createElement("p");
+      category.textContent =
+        "Category: " +
+        (event.categories || [])
+          .map(c => c.title).join(", ");
+
+      const geometry = (event.geometry || []);
+      const latest = geometry[geometry.length - 1];
+
+      const date = document.createElement("p");
+      date.textContent = latest
+        ? "Last reported: " + latest.date
+        : "Date: Not available";
+
+      card.append(title, category, date);
+
+      if (latest && latest.coordinates) {
+        const coords = latest.coordinates;
+        const link = document.createElement("a");
+        link.href =
+          "https://www.openstreetmap.org/?mlat=" +
+          coords[1] + "&mlon=" + coords[0] +
+          "#map=6/" + coords[1] + "/" + coords[0];
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "View location →";
+        card.appendChild(link);
+      }
+
+      container.appendChild(card);
+    });
+
+    status.textContent =
+      "● CONNECTED · NASA DATA RECEIVED";
+
+  } catch (error) {
+    status.textContent =
+      "● CONNECTION ERROR · TRY AGAIN";
+    container.textContent =
+      "Unable to retrieve data. Check your internet connection and try again.";
+  }
+}
+
+loadEvents();
+setInterval(loadEvents, 15 * 60 * 1000);
+</script>
+
+</body>
+</html>
